@@ -12,7 +12,8 @@ It validates the timestamp + HMAC signature, parses the JSON, and returns `200` 
 - ⏱️ **Replay protection** using `prism-timestamp` (default skew = 5 minutes)  
 - 🛡️ **Constant-time compare** for signatures
 - 📦 **Minimal payload validation** (forward-compatible)  
-- ⚡ **Fast ack** — do heavy work async  
+- ⚡ **Fast ack** — do heavy work async
+- 🫀 Small **health check** endpoint  
 - ☁️ Deployable on **Vercel** with zero ops
 
 ---
@@ -139,7 +140,7 @@ app = get_wsgi_application()  # Vercel expects 'app'
 
 ### 6. Deploy 🚀
 
-Once deployed, your webhook URL will be: ```bash https://<your-project>.vercel.app/api/prism/```
+Once deployed, your webhook URL will be: ```https://<your-project>.vercel.app/api/prism/```
 
 ### 7. Deployed Test Example
 
@@ -172,6 +173,7 @@ curl -i -X POST "$URL" \\
     - Scan payload: scanId, userId, userToken are non-empty strings; state ∈ { CREATED, PROCESSING, READY, FAILED }
     - Future Me payload: bodyShapePredictionId, scanId, userId, userToken are non-empty strings; state ∈ { PROCESSING, READY, FAILED }
     - Accept unknown/extra fields (don’t fail on them)
+- Check health of endpoint with ```curl -i http://127.0.0.1:8000/health```
 
 Logs:
 - Local: terminal where you runserver
