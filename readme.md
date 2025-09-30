@@ -89,7 +89,9 @@ curl -i -X POST "$URL" \\
   -d "$BODY"
 ```
 
-Expected: HTTP/1.1 200 OK with {"ok": true}.
+Expected: ```HTTP/1.1 200 OK with {"ok": true}.```
+
+If secret is not correct, expect: ```{"ok": false, "error": "invalid-signature"}```
 
 ## Deploy to Vercel or equivalent
 
