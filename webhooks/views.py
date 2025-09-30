@@ -14,6 +14,51 @@ def _within_skew(ts_iso: str, skew_seconds: int) -> bool:
     now = datetime.now(timezone.utc)
     return abs((now - sent).total_seconds()) <= skew_seconds
 
+ALLOWED_EVENTS = {
+    "scan.processing.started",
+    "scan.processing.succeeded",
+    "scan.processing.failed",
+    "body_shape_prediction.processing.started",
+    "body_shape_prediction.processing.succeeded",
+    "body_shape_prediction.processing.failed",
+}
+SCAN_STATES = {
+    "CREATED",
+    "PROCESSING",
+    "READY",
+    "FAILED"
+}
+
+FM_STATES   = {
+    "PROCESSING",
+    "READY",
+    "FAILED"
+}
+
+def _req_str(obj, key): 
+    return isinstance(obj.get(key), str) and obj[key].strip() != ""
+
+def validate_minimal(event: dict) -> tuple[bool, str]:
+    if not isinstance(event, dict): return False, "body-must-be-object"
+    et = event.get("eventType")
+    payload = event.get("payload")
+    if et not in ALLOWED_EVENTS: return False, "unknown-eventType"
+    if not isinstance(payload, dict): return False, "payload-must-be-object"
+
+    if et.startswith("scan."):
+        if not (_req_str(payload, "scanId") and _req_str(payload, "userId") and _req_str(payload, "userToken")):
+            return False, "missing-scan-fields"
+        if payload.get("state") not in SCAN_STATES:
+            return False, "invalid-scan-state"
+        return True, ""
+    else:
+        if not (_req_str(payload, "bodyShapePredictionId") and _req_str(payload, "scanId")
+                and _req_str(payload, "userId") and _req_str(payload, "userToken")):
+            return False, "missing-fm-fields"
+        if payload.get("state") not in FM_STATES:
+            return False, "invalid-fm-state"
+        return True, ""
+
 @csrf_exempt
 def prism_webhook(request):
     if request.method != "POST":
@@ -58,9 +103,14 @@ def prism_webhook(request):
     # 4) Parse AFTER verifying
     try:
         event = json.loads(raw_body_str)
-    except Exception as e:
-        return JsonResponse({"ok": False, "error": "invalid-json", "detail": str(e)}, status=400)
+    except Exception:
+        return JsonResponse({"ok": False, "error": "invalid-json"}, status=400)
 
-    # 5) Ack quickly; do heavy work async (queue/job/etc.)
+    ok, why = validate_minimal(event)
+    if not ok:
+        return JsonResponse({"ok": False, "error": why}, status=422)
+
+    # 5) Publish raw + parsed downstream, ack fast:
+    # publish({"raw": raw_body_str, "parsed": event, "verified": True})
     print("✅ Prism webhook verified:", event.get("eventType"))
     return JsonResponse({"ok": True}, status=200)
