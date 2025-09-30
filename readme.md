@@ -10,7 +10,8 @@ It validates the timestamp + HMAC signature, parses the JSON, and returns `200` 
 
 - ✅ **HMAC verification** with Prism’s `prism-signature` header  
 - ⏱️ **Replay protection** using `prism-timestamp` (default skew = 5 minutes)  
-- 🛡️ **Constant-time compare** for signatures  
+- 🛡️ **Constant-time compare** for signatures
+- 📦 **Minimal payload validation** (forward-compatible)  
 - ⚡ **Fast ack** — do heavy work async  
 - ☁️ Deployable on **Vercel** with zero ops
 
@@ -165,6 +166,12 @@ curl -i -X POST "$URL" \\
 - 301 locally → add trailing slash (/api/prism/) or curl -L.
 - invalid-signature → Secret mismatch, body altered, or wrong timestamp in signature.
 - stale-or-bad-timestamp → Event older than allowed skew. Fix system clock or raise PRISM_WEBHOOK_SKEW_SECONDS.
+- minimal payload validation is done for:
+    - Top-level shape: { eventType: string, payload: object }
+    - eventType ∈ { scan.processing.started|succeeded|failed, body_shape_prediction.processing.started|succeeded|failed }
+    - Scan payload: scanId, userId, userToken are non-empty strings; state ∈ { CREATED, PROCESSING, READY, FAILED }
+    - Future Me payload: bodyShapePredictionId, scanId, userId, userToken are non-empty strings; state ∈ { PROCESSING, READY, FAILED }
+    - Accept unknown/extra fields (don’t fail on them)
 
 Logs:
 - Local: terminal where you runserver
