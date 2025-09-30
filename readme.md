@@ -1,5 +1,3 @@
-readme_content = """# Prism Webhook Listener (Django on Vercel)
-
 A minimal Django service that **receives and verifies Prism webhooks**.  
 It validates the timestamp + HMAC signature, parses the JSON, and returns `200` quickly so Prism doesn’t retry.
 
