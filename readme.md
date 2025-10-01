@@ -93,7 +93,44 @@ Expected: ```HTTP/1.1 200 OK with {"ok": true}.```
 
 If secret is not correct, expect: ```{"ok": false, "error": "invalid-signature"}```
 
-## Deploy to Vercel or equivalent
+## Test this code live
+
+This code is already deployed for quick testing of the POST calls here: https://prism-webhook-listener-django.vercel.app/api/prism/.
+
+Hit the endpoint with the examples below to try it out.
+
+### Correct secret
+```bash
+URL="https://prism-webhook-listener-django.vercel.app/api/prism/"
+SECRET="whsec_test_1234567890"
+TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+BODY='{"eventType":"scan.processing.succeeded","payload":{"scanId":"scan_11111111-2222-3333-4444-555555555555","userId":"user_aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee","userToken":"partner_user_token_123","state":"READY"}}'
+SIG=$(printf "%s.%s" "$TIMESTAMP" "$BODY" | openssl dgst -sha256 -hmac "$SECRET" -r | awk '{print $1}')
+
+curl -i -X POST "$URL" \
+-H "Content-Type: application/json" \
+-H "prism-timestamp: $TIMESTAMP" \
+-H "prism-signature: $SIG" \
+-d "$BODY"
+```
+
+### Invalid secret
+```bash
+URL="https://prism-webhook-listener-django.vercel.app/api/prism/"
+SECRET="wrong_secret_test_1234567890"
+TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+BODY='{"eventType":"scan.processing.succeeded","payload":{"scanId":"scan_11111111-2222-3333-4444-555555555555","userId":"user_aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee","userToken":"partner_user_token_123","state":"READY"}}'
+SIG=$(printf "%s.%s" "$TIMESTAMP" "$BODY" | openssl dgst -sha256 -hmac "$SECRET" -r | awk '{print $1}')
+
+curl -i -X POST "$URL" \
+-H "Content-Type: application/json" \
+-H "prism-timestamp: $TIMESTAMP" \
+-H "prism-signature: $SIG" \
+-d "$BODY"
+```
+
+## Deploy to your own Vercel or equivalent
+
 
 If you want to quickly deploy this code to Vercel or equivalent follow the instructions below. This repo already includes the edits and files described below.
 
