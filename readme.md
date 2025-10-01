@@ -1,6 +1,8 @@
 A minimal Django service that **receives and verifies Prism webhooks**.  
 It validates the timestamp + HMAC signature, parses the JSON, and returns `200` quickly so Prism doesn’t retry.
 
+This sample webhook listener is built based on the specifications found here: https://prism-labs.notion.site/setting-up-webhooks
+
 > Live endpoint path (after deploy):  
 > **`/api/prism/`** (note the trailing slash)
 
